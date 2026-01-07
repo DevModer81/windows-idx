@@ -3,9 +3,9 @@ set -e
 
 ### CONFIG ###
 ISO_URL="https://crustywindo.ws/collection/Windows%2011/Windows%2011%2022H2%20Build%2022621.2134%20Gamer%20OS%20en-US%20ESD%20August%202023.iso"
-ISO_FILE="win10-lite.iso"
+ISO_FILE="win11-gamer.iso"
 
-DISK_FILE="win10.qcow2"
+DISK_FILE="win11.qcow2"
 DISK_SIZE="64G"
 
 RAM="8G"
@@ -43,8 +43,8 @@ else
   echo "✅ Disk đã tồn tại"
 fi
 
-### RUN QEMU (BIOS + KVM) ###
-echo "🚀 Windows 10 KVM (BIOS legacy)"
+### RUN QEMU (BIOS + KVM + IDE) ###
+echo "🚀 Windows 11 (BIOS legacy + KVM)"
 echo "🖥️  VNC : localhost:5900"
 echo "🖧  RDP : localhost:${RDP_PORT}"
 
@@ -58,11 +58,11 @@ qemu-system-x86_64 \
   -rtc base=localtime \
   -boot menu=on \
   \
-  -drive file=${DISK_FILE},if=virtio,format=qcow2,cache=none,aio=native \
+  -drive file=${DISK_FILE},if=ide,format=qcow2 \
   -cdrom ${ISO_FILE} \
   \
   -netdev user,id=n0,hostfwd=tcp::${RDP_PORT}-:3389 \
-  -device virtio-net-pci,netdev=n0 \
+  -device e1000,netdev=n0 \
   \
   -vnc ${VNC_DISPLAY} \
   -usb -device usb-tablet
