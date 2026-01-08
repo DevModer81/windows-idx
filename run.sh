@@ -5,7 +5,7 @@ set -e
 ISO_URL="https://go.microsoft.com/fwlink/p/?LinkID=2195443"
 ISO_FILE="win11-gamer.iso"
 
-DISK_FILE="win11.qcow2"
+DISK_FILE="/var/win11.qcow2"
 DISK_SIZE="64G"
 
 RAM="4G"
