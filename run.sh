@@ -2,7 +2,7 @@
 set -e
 
 ### CONFIG ###
-ISO_URL="https://go.microsoft.com/fwlink/p/?LinkID=2195443&clcid=0x409&culture=en-us&country=US"
+ISO_URL="https://go.microsoft.com/fwlink/p/?LinkID=2195443"
 ISO_FILE="win11-gamer.iso"
 
 DISK_FILE="win11.qcow2"
@@ -15,49 +15,81 @@ VNC_DISPLAY=":0"
 RDP_PORT="3389"
 
 FLAG_FILE="installed.flag"
-WORKDIR="/home/user/windows-idx"
+WORKDIR="$HOME/windows-idx"
 
-### CHECK KVM ###
-[ -e /dev/kvm ] || { echo "❌ Không có /dev/kvm"; exit 1; }
-command -v qemu-system-x86_64 >/dev/null || { echo "❌ Chưa cài qemu"; exit 1; }
+### NGROK ###
+NGROK_TOKEN="37Z86uoOADtEYK4BKprMSOYQJGT_xs92nf8f6AJfiZLTu9oN"
+NGROK_DIR="$HOME/.ngrok"
+NGROK_BIN="$NGROK_DIR/ngrok"
+NGROK_CFG="$NGROK_DIR/ngrok.yml"
+NGROK_LOG="$NGROK_DIR/ngrok.log"
 
-### DISK ###
+### CHECK ###
+[ -e /dev/kvm ] || { echo "❌ No /dev/kvm"; exit 1; }
+command -v qemu-system-x86_64 >/dev/null || { echo "❌ No qemu"; exit 1; }
+
+### PREP ###
+mkdir -p "$WORKDIR"
+cd "$WORKDIR"
+
 [ -f "$DISK_FILE" ] || qemu-img create -f qcow2 "$DISK_FILE" "$DISK_SIZE"
 
-### ISO (chỉ tải nếu chưa cài) ###
 if [ ! -f "$FLAG_FILE" ]; then
   [ -f "$ISO_FILE" ] || wget -O "$ISO_FILE" "$ISO_URL"
 fi
 
-echo "🚀 Windows KVM"
-echo "🖥️  VNC : localhost:5900"
-echo "🖧  RDP : localhost:3389"
-
 ############################
 # BACKGROUND FILE CREATOR #
 ############################
-mkdir -p "$WORKDIR"
-
 (
-  cd "$WORKDIR"
   while true; do
     echo "Lộc Nguyễn đẹp troai" > locnguyen.txt
     echo "[$(date '+%H:%M:%S')] Đã tạo locnguyen.txt"
     sleep 300
   done
 ) &
-
 FILE_PID=$!
+
+#################
+# NGROK START  #
+#################
+mkdir -p "$NGROK_DIR"
+
+if [ ! -f "$NGROK_BIN" ]; then
+  curl -sL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz \
+  | tar -xz -C "$NGROK_DIR"
+  chmod +x "$NGROK_BIN"
+fi
+
+cat > "$NGROK_CFG" <<EOF
+version: "2"
+authtoken: $NGROK_TOKEN
+tunnels:
+  vnc:
+    proto: tcp
+    addr: 5900
+  rdp:
+    proto: tcp
+    addr: 3389
+EOF
+
+pkill -f "$NGROK_BIN" 2>/dev/null || true
+"$NGROK_BIN" start --all --config "$NGROK_CFG" \
+  --log=stdout > "$NGROK_LOG" 2>&1 &
+sleep 5
+
+VNC_ADDR=$(grep -oE 'tcp://[^ ]+' "$NGROK_LOG" | sed -n '1p')
+RDP_ADDR=$(grep -oE 'tcp://[^ ]+' "$NGROK_LOG" | sed -n '2p')
+
+echo "🌍 VNC PUBLIC : $VNC_ADDR"
+echo "🌍 RDP PUBLIC : $RDP_ADDR"
 
 #################
 # RUN QEMU     #
 #################
 if [ ! -f "$FLAG_FILE" ]; then
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "⚠️  CHẾ ĐỘ CÀI ĐẶT WINDOWS"
-  echo "👉 Sau khi cài xong Windows:"
-  echo "👉 Quay lại terminal này, nhập: xong"
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "👉 Cài xong quay lại nhập: xong"
 
   qemu-system-x86_64 \
     -enable-kvm \
@@ -76,23 +108,20 @@ if [ ! -f "$FLAG_FILE" ]; then
   QEMU_PID=$!
 
   while true; do
-    read -rp "👉 Nhập 'xong' khi đã cài xong Windows: " DONE
+    read -rp "👉 Nhập 'xong': " DONE
     if [ "$DONE" = "xong" ]; then
-      echo "✅ Đã xác nhận cài xong Windows"
       touch "$FLAG_FILE"
-      echo "🛑 Dừng QEMU..."
       kill "$QEMU_PID"
-      echo "🛑 Dừng tiến trình tạo file..."
       kill "$FILE_PID"
-      sleep 3
-      echo "🧹 Xóa ISO"
+      pkill -f "$NGROK_BIN"
       rm -f "$ISO_FILE"
+      echo "✅ Hoàn tất – lần sau boot thẳng qcow2"
       exit 0
     fi
   done
 
 else
-  echo "✅ Windows đã cài – boot từ qcow2"
+  echo "✅ Windows đã cài – boot thường"
 
   qemu-system-x86_64 \
     -enable-kvm \
