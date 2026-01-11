@@ -8,8 +8,8 @@ ISO_FILE="win11-gamer.iso"
 DISK_FILE="/var/win11.qcow2"
 DISK_SIZE="64G"
 
-RAM="4G"
-CORES="2"
+RAM="24G"
+CORES="4"
 
 VNC_DISPLAY=":0"
 RDP_PORT="3389"
