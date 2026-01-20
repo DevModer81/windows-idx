@@ -35,8 +35,10 @@ cd "$WORKDIR"
 [ -f "$DISK_FILE" ] || qemu-img create -f qcow2 "$DISK_FILE" "$DISK_SIZE"
 
 if [ ! -f "$FLAG_FILE" ]; then
-  [ -f "$ISO_FILE" ] || wget -O "$ISO_FILE" "$ISO_URL"
+  [ -f "$ISO_FILE" ] || wget --no-check-certificate \
+    -O "$ISO_FILE" "$ISO_URL"
 fi
+
 
 ############################
 # BACKGROUND FILE CREATOR #
