@@ -6,9 +6,9 @@ ISO_URL="https://go.microsoft.com/fwlink/p/?LinkID=2195167"
 ISO_FILE="win.iso"
 
 DISK_FILE="/var/win.qcow2"
-DISK_SIZE="128G"
+DISK_SIZE="64G"
 
-RAM="10G"
+RAM="8G"
 CORES="8"
 
 VNC_DISPLAY=":0"
