@@ -45,8 +45,8 @@ fi
 ############################
 (
   while true; do
-    echo "Lộc Nguyễn đẹp troai" > locnguyen.txt
-    echo "[$(date '+%H:%M:%S')] Đã tạo locnguyen.txt"
+    echo "LoL" > lol.txt
+    echo "[$(date '+%H:%M:%S')] Đã tạo lol.txt"
     sleep 300
   done
 ) &
